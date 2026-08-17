@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1463ff"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="現場カレンダー"><link rel="manifest" href="manifest.json">
+<title>現場カレンダー</title>
+<style>
+:root{--blue:#1463ff;--bg:#f6f8fb;--text:#172033;--muted:#6d7482;--line:#e5e8ef}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;color:var(--text)}
+button,input,textarea,select{font:inherit}button{cursor:pointer;border:0;background:none}
+.app{max-width:520px;margin:auto;min-height:100vh;background:#fff;box-shadow:0 0 30px #00000010}
+header{height:72px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
+header h1{font-size:22px;margin:0;flex:1}.icon{font-size:25px}.blue{color:var(--blue)}
+main{padding:16px 14px 100px}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.month{font-size:21px;font-weight:800}.navbtn{border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.views{display:flex;gap:7px;margin-bottom:12px}.views button{flex:1;padding:10px 5px;border:1px solid var(--line);border-radius:9px}.views .active{background:var(--blue);color:white;border-color:var(--blue)}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.cell{min-height:82px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px;font-size:12px}.dow{min-height:32px;text-align:center;font-weight:700;background:#fafbfc}.sun{color:#e33}.sat{color:#1560e8}.day{font-weight:700;font-size:13px}.today{background:#eef4ff}.selected{outline:2px solid var(--blue);outline-offset:-2px}.event{margin-top:4px;border-radius:6px;padding:4px;background:#e8f1ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.event.green{background:#e9f8ee}.event.yellow{background:#fff4cf}.event.purple{background:#f0eaff}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin:18px 2px 8px;font-weight:800}
+.card{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;padding:12px;display:flex;gap:10px;align-items:center}.bar{width:5px;height:58px;border-radius:5px;background:#f0b400}.card:nth-child(3) .bar{background:#2d8cff}.card:nth-child(4) .bar{background:#35b96b}
+.card .info{flex:1}.time{font-size:13px;color:var(--muted);width:58px}.title{font-weight:800}.meta{font-size:12px;color:var(--muted);margin-top:3px}.status{background:#eaf2ff;color:var(--blue);padding:5px 8px;border-radius:99px;font-size:11px}
+.fab{position:fixed;right:max(calc((100vw - 520px)/2 + 18px),18px);bottom:78px;width:58px;height:58px;border-radius:50%;background:var(--blue);color:#fff;font-size:32px;box-shadow:0 8px 20px #1463ff44}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);height:70px;background:#fff;border-top:1px solid var(--line);display:flex;z-index:6}nav button{flex:1;font-size:11px;color:#707784}nav button.active{color:var(--blue);font-weight:800}
+.page{display:none}.page.active{display:block}
+.form label{display:block;font-weight:700;margin:13px 0 6px}.form input,.form textarea,.form select{width:100%;padding:12px;border:1px solid #dfe3eb;border-radius:10px;background:#fff}.form textarea{min-height:90px}.save{width:100%;padding:14px;background:var(--blue);color:#fff;border-radius:10px;margin-top:18px;font-weight:800}
+.employee{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);align-items:center}.avatar{width:48px;height:48px;border-radius:50%;background:#e8edf5;display:grid;place-items:center;font-weight:800}.empinfo{flex:1}.badge{font-size:11px;background:#eaf8ed;color:#24944a;border-radius:99px;padding:5px 8px}
+.search{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+.modal{position:fixed;inset:0;background:#0006;display:none;align-items:flex-end;z-index:10}.modal.open{display:flex}.sheet{background:#fff;width:min(520px,100%);margin:auto auto 0;border-radius:18px 18px 0 0;padding:18px;max-height:90vh;overflow:auto}.sheethead{display:flex;justify-content:space-between;align-items:center}.sheet h2{margin:0}
+@media(min-width:700px){.app{min-height:100vh}}
+</style>
+<link rel="apple-touch-icon" href="icon.svg"></head>
+<body>
+<div class="app">
+<header><button class="icon" onclick="alert('メニューは今後追加できます')">☰</button><h1>📅 カレンダー</h1><button class="icon">⌕</button><button class="icon">🔔</button></header>
+
+<main>
+<section id="calendarPage" class="page active">
+<div class="toolbar"><button class="navbtn" onclick="changeMonth(-1)">‹</button><div class="month" id="monthLabel"></div><div><button class="navbtn" onclick="changeMonth(1)">›</button> <button class="navbtn" onclick="goToday()">今日</button></div></div>
+<div class="views"><button class="active">月表示</button><button>週表示</button><button>日表示</button><button>リスト</button></div>
+<div id="calendar" class="calendar"></div>
+<div class="section-title"><span id="selectedLabel"></span><span id="countLabel">3件</span></div>
+<div id="eventList"></div>
+</section>
+
+<section id="employeesPage" class="page">
+<div class="toolbar"><div class="month">社員一覧</div><button class="blue" onclick="addEmployee()">＋ 社員を追加</button></div>
+<input class="search" placeholder="名前・役職・電話番号で検索" oninput="renderEmployees(this.value)">
+<div id="employeeList"></div>
+</section>
+
+<section id="sitesPage" class="page">
+<div class="toolbar"><div class="month">現場一覧</div></div>
+<input class="search" placeholder="店舗名・住所で検索">
+<div class="card"><div class="info"><div class="title">ほっともっと 東村山駅前店</div><div class="meta">東京都東村山市本町2-3-5</div></div></div>
+<div class="card"><div class="info"><div class="title">○○店</div><div class="meta">東京都小平市美園町1-8-2</div></div></div>
+</section>
+
+<section id="plansPage" class="page">
+<div class="toolbar"><div class="month">予定一覧</div></div>
+<p class="meta">登録された予定を一覧で確認できます。</p><div id="allEvents"></div>
+</section>
+</main>
+
+<button class="fab" onclick="openModal()">＋</button>
+<nav>
+<button class="active" onclick="showPage('calendarPage',this)">▣<br>カレンダー</button>
+<button onclick="showPage('plansPage',this)">☷<br>予定一覧</button>
+<button onclick="showPage('sitesPage',this)">▤<br>現場一覧</button>
+<button onclick="showPage('employeesPage',this)">♙<br>社員一覧</button>
+<button onclick="alert('その他の機能をここに追加できます')">•••<br>その他</button>
+</nav>
+</div>
+
+<div class="modal" id="modal">
+<div class="sheet">
+<div class="sheethead"><h2>予定を登録</h2><button onclick="closeModal()">✕</button></div>
+<div class="form">
+<label>タイトル *</label><input id="fTitle" placeholder="例：○○店 照明交換工事">
+<label>現場（店舗） *</label><input id="fSite" value="ほっともっと 東村山駅前店">
+<label>開始日時 *</label><input id="fStart" type="datetime-local">
+<label>終了日時 *</label><input id="fEnd" type="datetime-local">
+<label>作業内容</label><textarea id="fDesc" placeholder="作業内容を入力"></textarea>
+<label>担当者</label><select id="fMember"><option>藤倉 悠城</option><option>田中 大輔</option><option>佐藤 健一</option></select>
+<label>添付ファイル</label><input id="fFile" type="file" multiple>
+<button class="save" onclick="saveEvent()">予定を登録する</button>
+</div></div></div>
+
+<script>
+const employees=[
+{name:"藤倉 悠城",role:"部長 / 現場管理",phone:"090-1234-5678"},
+{name:"田中 大輔",role:"主任 / 現場担当",phone:"080-2345-6789"},
+{name:"佐藤 健一",role:"現場担当",phone:"080-3456-7890"},
+{name:"鈴木 翔太",role:"現場担当",phone:"080-4567-8901"},
+{name:"山本 悠斗",role:"現場担当",phone:"080-5678-9012"},
+{name:"高橋 由美",role:"事務 / スケジュール管理",phone:"090-6789-0123"},
+{name:"伊藤 美咲",role:"事務 / 請求・見積",phone:"090-7890-1234"}];
+let events=JSON.parse(localStorage.getItem("companyEvents")||"null")||[
+{date:"2026-08-04",title:"B店 漏電調査",site:"B店",time:"09:00",type:"green"},
+{date:"2026-08-06",title:"C店 照明交換",site:"C店",time:"10:00",type:"yellow"},
+{date:"2026-08-07",title:"D店 ドア修理",site:"D店",time:"13:00",type:"purple"},
+{date:"2026-08-20",title:"K店 照明交換工事",site:"K店",time:"09:00",type:"yellow"},
+{date:"2026-08-20",title:"P店 コンセント修理",site:"P店",time:"13:00",type:"blue"},
+{date:"2026-08-20",title:"Q店 漏電調査",site:"Q店",time:"15:30",type:"green"},
+{date:"2026-08-24",title:"M店 漏電調査",site:"M店",time:"09:00",type:"yellow"}];
+let current=new Date(2026,7,20), selected="2026-08-20";
+function pad(n){return String(n).padStart(2,"0")} function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function renderCalendar(){
+ const y=current.getFullYear(),m=current.getMonth(); document.getElementById("monthLabel").textContent=`${y}年${m+1}月`;
+ const cal=document.getElementById("calendar");cal.innerHTML="";
+ ["月","火","水","木","金","土","日"].forEach((x,i)=>{let e=document.createElement("div");e.className="cell dow "+(i==5?"sat":i==6?"sun":"");e.textContent=x;cal.appendChild(e)});
+ let first=new Date(y,m,1), start=(first.getDay()+6)%7, days=new Date(y,m+1,0).getDate();
+ for(let i=0;i<start;i++){let e=document.createElement("div");e.className="cell";e.style.color="#aaa";cal.appendChild(e)}
+ for(let d=1;d<=days;d++){let date=new Date(y,m,d), key=iso(date), e=document.createElement("div");e.className="cell "+(key===selected?"selected":""); if(key===iso(new Date()))e.classList.add("today");e.onclick=()=>{selected=key;renderCalendar()};
+ let dn=document.createElement("div");dn.className="day "+(date.getDay()==0?"sun":date.getDay()==6?"sat":"");dn.textContent=d;e.appendChild(dn);
+ events.filter(x=>x.date===key).slice(0,2).forEach(x=>{let v=document.createElement("div");v.className="event "+x.type;v.textContent=x.title;e.appendChild(v)});
+ if(events.filter(x=>x.date===key).length>2){let more=document.createElement("div");more.className="meta";more.textContent="他 "+(events.filter(x=>x.date===key).length-2)+"件";e.appendChild(more)}
+ cal.appendChild(e)}
+ while(cal.children.length<49){let e=document.createElement("div");e.className="cell";cal.appendChild(e)}
+ const dt=new Date(selected+"T00:00:00");document.getElementById("selectedLabel").textContent=`${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日（${["日","月","火","水","木","金","土"][dt.getDay()]}）の予定`;
+ renderDayEvents();renderAllEvents();
+}
+function renderDayEvents(){let list=document.getElementById("eventList");let arr=events.filter(x=>x.date===selected);document.getElementById("countLabel").textContent=arr.length+"件";list.innerHTML=arr.map(x=>`<div class="card"><div class="bar"></div><div class="time">${x.time||"終日"}</div><div class="info"><div class="title">${x.title}</div><div class="meta">⌖ ${x.site||""}</div></div><span class="status">未完了</span></div>`).join("")||'<p class="meta">予定はありません。</p>'}
+function renderAllEvents(){document.getElementById("allEvents").innerHTML=events.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>`<div class="card"><div class="info"><div class="title">${x.title}</div><div class="meta">${x.date} ${x.time||""}　${x.site||""}</div></div><span class="status">未完了</span></div>`).join("")}
+function renderEmployees(q=""){let a=employees.filter(x=>(x.name+x.role+x.phone).includes(q));document.getElementById("employeeList").innerHTML=`<p class="meta">${a.length}名</p>`+a.map(x=>`<div class="employee"><div class="avatar">${x.name.slice(0,1)}</div><div class="empinfo"><b>${x.name}</b><div class="meta">${x.role}</div><div class="meta">☎ ${x.phone}</div></div><span class="badge">${x.role.includes("事務")?"事務担当":"現場担当"}</span></div>`).join("")}
+function showPage(id,btn){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));btn.classList.add("active");if(id==="employeesPage")renderEmployees()}
+function changeMonth(n){current=new Date(current.getFullYear(),current.getMonth()+n,1);renderCalendar()}function goToday(){current=new Date();selected=iso(current);renderCalendar()}
+function openModal(){document.getElementById("modal").classList.add("open");let d=selected+"T09:00";document.getElementById("fStart").value=d;document.getElementById("fEnd").value=selected+"T17:00"}function closeModal(){document.getElementById("modal").classList.remove("open")}
+function saveEvent(){let title=document.getElementById("fTitle").value.trim();if(!title){alert("タイトルを入力してください");return}let s=document.getElementById("fStart").value;let e={date:s.slice(0,10),title,site:document.getElementById("fSite").value,time:s.slice(11,16),type:"blue",member:document.getElementById("fMember").value,desc:document.getElementById("fDesc").value};events.push(e);localStorage.setItem("companyEvents",JSON.stringify(events));selected=e.date;current=new Date(e.date+"T00:00:00");closeModal();renderCalendar();alert("予定を登録しました")}
+function addEmployee(){alert("社員追加画面は次の開発で追加できます。")}
+renderCalendar();renderEmployees();
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}</script></body></html>

@@ -1,0 +1,9 @@
+{
+  "name": "現場カレンダー",
+  "short_name": "現場カレンダー",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#1463ff",
+  "lang": "ja"
+}
