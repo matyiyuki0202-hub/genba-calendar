@@ -37,7 +37,12 @@ nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,
 <main>
 <section id="calendarPage" class="page active">
 <div class="toolbar"><button class="navbtn" onclick="changeMonth(-1)">‹</button><div class="month" id="monthLabel"></div><div><button class="navbtn" onclick="changeMonth(1)">›</button> <button class="navbtn" onclick="goToday()">今日</button></div></div>
-<div class="views"><button class="active">月表示</button><button>週表示</button><button>日表示</button><button>リスト</button></div>
+<div class="views">
+<button class="active" onclick="setView('month',this)">月表示</button>
+<button onclick="setView('week',this)">週表示</button>
+<button onclick="setView('day',this)">日表示</button>
+<button onclick="setView('list',this)">リスト</button>
+</div>
 <div id="calendar" class="calendar"></div>
 <div class="section-title"><span id="selectedLabel"></span><span id="countLabel">3件</span></div>
 <div id="eventList"></div>
